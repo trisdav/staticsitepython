@@ -167,8 +167,23 @@ def markdown_to_html_node(md):
             testfile.write(node.to_html())
     return div
 
+import os
+import shutil
+def copyFiles(src,dest):
+    files=os.listdir(src)
+    for file in files:
+        filePath=os.path.join(src,file)
+        print(filePath)
+        if os.path.isfile(filePath):
+            destPath = os.path.join(dest,file)
+            shutil.copy(filePath, destPath)
+        else:
+            os.makedirs(os.path.join(dest,file), exist_ok=True)
+            copyFiles(filePath,dest)
+    
 def main():
+    copyFiles("static","public")
     #tn = textnode.TextNode("aaa",textnode.TextType.TEXT,"")
-    text_to_textnodes("This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)")
+    #text_to_textnodes("This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)")
 
 main()
