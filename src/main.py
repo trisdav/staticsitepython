@@ -227,7 +227,7 @@ def extract_title(md):
     title = title.lstrip("#").strip()
     return title
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, template_path, dest_path, basepath):
     print(f"Generating page from {from_path} to {dest_path} using {template_path}")
     fmd=""
     with open(from_path,"r") as fp:
@@ -239,11 +239,13 @@ def generate_page(from_path, template_path, dest_path):
     title = extract_title(fmd)
     tmd = tmd.replace("{{ Title }}", title)
     tmd = tmd.replace("{{ Content }}", fhtml)
+    tmd = tmd.replace("href=\"/", f"href=\"{basepath}")
+    tmd = tmd.replace("src=\"/", f"src=\"{basepath}")
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     with open(dest_path, "w") as dp:
         dp.write(tmd)
     
-def generate_pages_recursive(dir_content, temp_path, dest_path):
+def generate_pages_recursive(dir_content, temp_path, dest_path, basepath):
     files = os.listdir(dir_content)
     for file in files:
         
@@ -251,26 +253,30 @@ def generate_pages_recursive(dir_content, temp_path, dest_path):
             if file.endswith(".md"):
                 contSrc = os.path.join(dir_content,file)
                 contDest = os.path.join(dest_path,file)
-                generate_page(contSrc, temp_path, contDest.replace(".md",".html"))
+                generate_page(contSrc, temp_path, contDest.replace(".md",".html"), basepath)
         else:
             nextContent = os.path.join(dir_content,file)
             nextDest = os.path.join(dest_path,file)
-            generate_pages_recursive(nextContent,temp_path, nextDest.replace(".md",".html"))
+            generate_pages_recursive(nextContent,temp_path, nextDest.replace(".md",".html"), basepath)
 
-def main():
-    rmdir = os.path.abspath("public/")
-    cont=input(f"Remove directory {rmdir} (y/n)? ")
-    if cont.upper() == "Y":
-        shutil.rmtree("public/")
-    else:
-        print("Must remove public directory to continue.")
-        return 0
+def main(basepath):
+    rmdir = os.path.abspath("docs/")
+    if os.path.exists(rmdir):
+        cont=input(f"Remove directory {rmdir} (y/n)? ")
+        if cont.upper() == "Y":
+            shutil.rmtree("docs/")
+        else:
+            print("Must remove docs directory to continue.")
+            return 0
     print("Copying files...")
-    copyFiles("static","public")
-    #generate_page("content/index.md","template.html","public/index.html")
-    generate_pages_recursive("content","template.html","public")
+    copyFiles("static","docs")
+    generate_pages_recursive("content","template.html","docs",basepath)
     #tn = textnode.TextNode("aaa",textnode.TextType.TEXT,"")
     #text_to_textnodes("This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)")
 
 if __name__=="__main__":
-    main()
+    import sys
+    basepath="/"
+    if len(sys.argv) > 1:
+        basepath = sys.argv[1]
+    main(basepath)
