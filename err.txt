@@ -1,0 +1,27 @@
+.....FF....
+======================================================================
+FAIL: test_to_html_with_children (test_textnode.TestParentNode)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/tristan/Documents/bootdev/staticsitepython/src/test_textnode.py", line 66, in test_to_html_with_children
+    self.assertEqual(parent_node.to_html(), "<div><span>child</span></div>")
+AssertionError: '<div<bound method HTMLNode.props_to_html of T[98 chars]div>' != '<div><span>child</span></div>'
+- <div<bound method HTMLNode.props_to_html of Tag=div, value=None, props=None, children=[Tag=span, value=child, props=None]>><span>child</span></div>
++ <div><span>child</span></div>
+
+
+======================================================================
+FAIL: test_to_html_with_grandchildren (test_textnode.TestParentNode)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/tristan/Documents/bootdev/staticsitepython/src/test_textnode.py", line 72, in test_to_html_with_grandchildren
+    self.assertEqual(
+AssertionError: '<div<bound method HTMLNode.props_to_html of T[320 chars]div>' != '<div><span><b>grandchild</b></span></div>'
+- <div<bound method HTMLNode.props_to_html of Tag=div, value=None, props=None, children=[Tag=span, value=None, props=None, children=[Tag=b, value=grandchild, props=None]]>><div<bound method HTMLNode.props_to_html of Tag=div, value=None, props=None, children=[Tag=span, value=None, props=None, children=[Tag=b, value=grandchild, props=None]]>><b>grandchild</b></div></div>
++ <div><span><b>grandchild</b></span></div>
+
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.001s
+
+FAILED (failures=2)
