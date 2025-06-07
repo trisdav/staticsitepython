@@ -24,7 +24,7 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
     return new_nodes
 
 def extract_markdown_images(text):
-    exp=r"!*[\[\(](.*?)[\]\)]"
+    exp=r"[\[\(](.*?)[\]\)]"
     matches = re.findall(exp,text)
     if len(matches)%2!=0:
         raise Exception("Syntax error: Incomplete image tag: " + text)
@@ -38,25 +38,28 @@ def split_images_string(text):
     Return a list of tuples where the first is the string split, the second the TextType.
     """
     split=[]
-    exp=r"!*[\[\(](.*?)[\]\)]"
+    exp=r"!*\[.*?\]\((.*?)\)"
     matches = list(re.finditer(exp,text))
-    if len(matches)%2!=0:
-        raise Exception("Syntax error: Incomplete image tag: " + text)
     imageRanges=[]
-    for i in range(0,len(matches),2):
-        imageRanges.append((matches[i].start(),matches[i+1].end()))
+    for i in range(0,len(matches)):
+        imageRanges.append((matches[i].start(),matches[i].end()))
     lastEnd = 0
+    start = 0
+    end = 0
     for imageRange in imageRanges:
         if lastEnd == imageRange[0]: # No string before the match
-            split.append((text[imageRange[0]:imageRange[1]], textnode.TextType.IMAGE))
+            start = imageRange[0]
+            end = imageRange[1]
         else: # String before the match
-            #print(textnode.TextType.TEXT)
-            split.append((text[lastEnd:imageRange[0]], textnode.TextType.TEXT))
-            imageText = text[imageRange[0]:imageRange[1]]
-            if imageText.startswith("!"):
-                split.append((imageText, textnode.TextType.IMAGE))
-            else:
-                split.append((imageText, textnode.TextType.LINK))
+            start = lastEnd
+            end = imageRange[0]
+            split.append((text[start:end], textnode.TextType.TEXT))
+        imageText = text[imageRange[0]:imageRange[1]]
+        if imageText.startswith("!"):
+            split.append((imageText, textnode.TextType.IMAGE))
+        else:
+            split.append((imageText, textnode.TextType.LINK))
+
         lastEnd = imageRange[1]
     if lastEnd != len(text): # string after match
         split.append((text[lastEnd:], textnode.TextType.TEXT))
@@ -67,6 +70,7 @@ def split_nodes_image(old_nodes):
     for node in old_nodes:
         if node.text_type == textnode.TextType.TEXT:
             splitStrings = split_images_string(node.text)
+            #print(splitStrings)
             for splitString in splitStrings:
                 if splitString[1] == textnode.TextType.TEXT:
                     new_nodes.append(textnode.TextNode(splitString[0], textnode.TextType.TEXT))
@@ -75,7 +79,10 @@ def split_nodes_image(old_nodes):
                     new_nodes.append(textnode.TextNode(img[0], textnode.TextType.IMAGE, url=img[1]))
                 if splitString[1] == textnode.TextType.LINK:
                     img = extract_markdown_images(splitString[0])[0]
-                    new_nodes.append(textnode.TextNode(img[0], textnode.TextType.LINK, url=img[1]))
+                    new_node = textnode.TextNode(img[0], textnode.TextType.LINK, url=img[1])
+                    new_nodes.append(new_node)
+                    
+                
         else:
             new_nodes.append(node)
     return new_nodes
@@ -132,7 +139,6 @@ def get_node(block, blockType):
     match blockType:
         case BlockType.PARAGRAPH:
             texts = text_to_textnodes(block)
-            #print(texts)
             content=""
             for text in texts:
                 content+=text.to_html()
@@ -146,16 +152,41 @@ def get_node(block, blockType):
                 if level == 6:
                     break
             # Heading in mark down can't have children...
-            return LeafNode(f"h{level}", block)
+            return LeafNode(f"h{level}", block.lstrip("# ").strip())
         case BlockType.CODE:
-            node = LeafNode("code",block)
+            node = LeafNode("code",block.strip("`").strip())
             return ParentNode("pre", [node])
         case BlockType.QUOTE:
-            return LeafNode("blockquote", block)
+            blockLines = block.split("\n")
+            lines=[]
+            for blockLine in blockLines:
+                lines.append(blockLine.strip(">").strip())
+            return LeafNode("blockquote", "<br>".join(lines))
         case BlockType.UNORDERED_LIST:
-            return LeafNode("ul",block)
+            blockLines = block.split("\n")
+            children=[]
+            for blockLine in blockLines:
+                cleanLine = blockLine.strip("- ").strip()
+                childNodes = text_to_textnodes(cleanLine)
+                content = ""
+                for node in childNodes:
+                 #   print(node)
+                    content += node.to_html()
+                #print(content)
+                children.append(LeafNode("li",content))
+            return ParentNode("ul",children)
         case BlockType.ORDERED_LIST:
-            return LeafNode("li",block)
+            blockLines = block.split("\n")
+            children=[]
+            subexpr=r"^[0-9]+\. "
+            for blockLine in blockLines:
+                cleanLine = re.sub(subexpr,"",blockLine).strip()
+                childNodes = text_to_textnodes(cleanLine)
+                content = ""
+                for node in childNodes:
+                    content += node.to_html()
+                children.append(LeafNode("li",content))
+            return ParentNode("ol",children)
 
 def markdown_to_html_node(md):
     blocks = markdown_to_blocks(md)
@@ -208,7 +239,7 @@ def generate_page(from_path, template_path, dest_path):
     title = extract_title(fmd)
     tmd = tmd.replace("{{ Title }}", title)
     tmd = tmd.replace("{{ Content }}", fhtml)
-    os.makedirs(dest_path, exists_ok=True)
+    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     with open(dest_path, "w") as dp:
         dp.write(tmd)
 
@@ -222,7 +253,9 @@ def main():
         return 0
     print("Copying files...")
     copyFiles("static","public")
+    generate_page("content/index.md","template.html","public/index.html")
     #tn = textnode.TextNode("aaa",textnode.TextType.TEXT,"")
     #text_to_textnodes("This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)")
 
-main()
+if __name__=="__main__":
+    main()

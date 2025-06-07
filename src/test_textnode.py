@@ -153,22 +153,100 @@ real code
         )
 
     def test_codeblock(self):
-        return
         md = """
-    ```
-    This is text that _should_ remain
-    the **same** even with inline stuff
-    ```
-    """
+```
+This is text that _should_ remain
+the **same** even with inline stuff
+```
+"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.maxDiff=None
+        self.assertEqual(
+            html,
+            "<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff</code></pre></div>",
+        )
+
+
+    def test_heading(self):
+        md = """
+# HEADING
+
+## HEADING 2
+
+### HEADING 3
+
+#### HEADING 4
+
+##### HEADING 5
+
+###### HEADING 6
+"""
 
         node = markdown_to_html_node(md)
         html = node.to_html()
         self.assertEqual(
             html,
-            "<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff\n</code></pre></div>",
+            "<div><h1>HEADING</h1><h2>HEADING 2</h2><h3>HEADING 3</h3><h4>HEADING 4</h4><h5>HEADING 5</h5><h6>HEADING 6</h6></div>",
         )
 
 
+    def test_blockquote(self):
+        md = """
+> multi line
+> blockquotes
+> are different
+"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><blockquote>multi line<br>blockquotes<br>are different</blockquote></div>",
+        )
+
+    def test_ul(self):
+        md = """
+- multi line
+- unordered list
+- are different
+"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><ul><li>multi line</li><li>unordered list</li><li>are different</li></ul></div>",
+        )
+
+    def test_ol(self):
+        md = """
+1. multi line
+2. ordered list
+10. are different
+"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><ol><li>multi line</li><li>ordered list</li><li>are different</li></ol></div>",
+        )
+
+    def test_formatted_ul(self):
+        md = """
+- ![rick roll](https://i.imgur.com/aKaOqIh.gif)
+- [link](https://boot.dev)
+- **are different**
+"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            '<div><ul><li><img src="https://i.imgur.com/aKaOqIh.gif" alt="rick roll"></img></li><li><a href="https://boot.dev">link</a></li><li><b>are different</b></li></ul></div>',
+        )
 
 # How can I move thse into the class TestSplitDelimiter?
 node0 = TextNode("one two **three** four five", TextType.TEXT)
