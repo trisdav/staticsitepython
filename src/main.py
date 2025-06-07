@@ -242,6 +242,20 @@ def generate_page(from_path, template_path, dest_path):
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     with open(dest_path, "w") as dp:
         dp.write(tmd)
+    
+def generate_pages_recursive(dir_content, temp_path, dest_path):
+    files = os.listdir(dir_content)
+    for file in files:
+        
+        if os.path.isfile(os.path.join(dir_content,file)):
+            if file.endswith(".md"):
+                contSrc = os.path.join(dir_content,file)
+                contDest = os.path.join(dest_path,file)
+                generate_page(contSrc, temp_path, contDest.replace(".md",".html"))
+        else:
+            nextContent = os.path.join(dir_content,file)
+            nextDest = os.path.join(dest_path,file)
+            generate_pages_recursive(nextContent,temp_path, nextDest.replace(".md",".html"))
 
 def main():
     rmdir = os.path.abspath("public/")
@@ -253,7 +267,8 @@ def main():
         return 0
     print("Copying files...")
     copyFiles("static","public")
-    generate_page("content/index.md","template.html","public/index.html")
+    #generate_page("content/index.md","template.html","public/index.html")
+    generate_pages_recursive("content","template.html","public")
     #tn = textnode.TextNode("aaa",textnode.TextType.TEXT,"")
     #text_to_textnodes("This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)")
 
