@@ -178,10 +178,49 @@ def copyFiles(src,dest):
             destPath = os.path.join(dest,file)
             shutil.copy(filePath, destPath)
         else:
+            newDest = os.path.join(dest,file)
             os.makedirs(os.path.join(dest,file), exist_ok=True)
-            copyFiles(filePath,dest)
-    
+            copyFiles(filePath,newDest)
+
+def extract_title(md):
+    startTitle = md.find("# ")
+    if startTitle == -1:
+        raise Exception("No title find in markdown file.")
+
+    endTitle = md[startTitle:].find("\n")
+    title=""
+    if endTitle > -1: # If the string is longer than one line.
+        title = md[startTitle:endTitle+1]
+    else:
+        title= md[startTitle:]
+    title = title.lstrip("#").strip()
+    return title
+
+def generate_page(from_path, template_path, dest_path):
+    print(f"Generating page from {from_path} to {dest_path} using {template_path}")
+    fmd=""
+    with open(from_path,"r") as fp:
+        fmd=fp.read()
+    tmd=""
+    with open(template_path,"r") as tp:
+        tmd=tp.read()
+    fhtml=markdown_to_html_node(fmd).to_html()
+    title = extract_title(fmd)
+    tmd = tmd.replace("{{ Title }}", title)
+    tmd = tmd.replace("{{ Content }}", fhtml)
+    os.makedirs(dest_path, exists_ok=True)
+    with open(dest_path, "w") as dp:
+        dp.write(tmd)
+
 def main():
+    rmdir = os.path.abspath("public/")
+    cont=input(f"Remove directory {rmdir} (y/n)? ")
+    if cont.upper() == "Y":
+        shutil.rmtree("public/")
+    else:
+        print("Must remove public directory to continue.")
+        return 0
+    print("Copying files...")
     copyFiles("static","public")
     #tn = textnode.TextNode("aaa",textnode.TextType.TEXT,"")
     #text_to_textnodes("This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)")

@@ -13,9 +13,23 @@ from main import markdown_to_blocks
 from main import BlockType
 from main import block_to_block_type
 from main import markdown_to_html_node
+from main import extract_title
 
-# [("rick roll", "https://i.imgur.com/aKaOqIh.gif"), ("obi wan", "https://i.imgur.com/fJRm4Vk.jpeg")]
 class TestMarkdownFunctions(unittest.TestCase):
+    def test_extract_title(self):
+        md="# start"
+        self.assertEqual(extract_title(md), "start")
+        md="""
+# start
+# end
+"""
+        self.assertEqual(extract_title(md), "start")
+        md="##fakeStart\n# start"
+        self.assertEqual(extract_title(md), "start")
+        md="#nostart"
+        with self.assertRaises(Exception):
+            self.assertEqual(extract_title(md), "nostart")
+
     def test_find_img(self):
         text = "This is text with a ![rick roll](https://i.imgur.com/aKaOqIh.gif) and ![obi wan](https://i.imgur.com/fJRm4Vk.jpeg)"
         self.assertEqual(str(extract_markdown_images(text)), "[('rick roll', 'https://i.imgur.com/aKaOqIh.gif'), ('obi wan', 'https://i.imgur.com/fJRm4Vk.jpeg')]")
